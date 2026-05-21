@@ -39,7 +39,7 @@
               }
               {
                 packages = with pkgs; [
-                  hterm
+                  glibc_multi.dev
                   cmake
                   stm32cubemx
                   gcc
@@ -48,6 +48,8 @@
                   ninja
                   openocd
                   stlink
+                  stlink-gui
+                  serial-studio
                 ];
 
                 shellHook = "";

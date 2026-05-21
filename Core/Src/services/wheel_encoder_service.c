@@ -1,0 +1,158 @@
+#include "services/wheel_encoder_service.h"
+#include "stm32l4xx_hal.h"
+#include <stdint.h>
+
+// The number of black marks on a single wheel
+#define BLACK_MARK_COUNT 12
+
+// The frequency of sampling the velocity. In ms
+#define VELOCITY_SAMPLING_FREQ 400
+
+// Upper bound for the schmitt trigger of the left wheel
+static uint16_t left_schmitt_trigger_upper;
+
+// Lower bound for the schmitt trigger of the left wheel
+static uint16_t left_schmitt_trigger_lower;
+
+// Lower bound for the schmitt trigger of the right wheel
+static uint16_t right_schmitt_trigger_upper;
+
+// Lower bound for the schmitt trigger of the right wheel
+static uint16_t right_schmitt_trigger_lower;
+
+const uint16_t WHEEL_ENCODER_SAMPLING_FREQ = 2;
+
+/**
+ * Struct holding the current velocity for both wheels.
+ */
+static velocity_t current_velocity = {0, 0};
+
+/**
+ * Struct holding the current distance for both wheels.
+ */
+static distance_t current_distance = {0, 0};
+
+/**
+ * The last value of the schmitt trigger of the right wheel.
+ */
+static char last_state_right_schmitt_trigger = 0;
+
+/**
+ * The last value of the schmitt trigger of the left wheel.
+ */
+static char last_state_left_schmitt_trigger = 0;
+
+/**
+ * The number of seen segments for the current rotation of the right wheel.
+ * Used for distance calculations.
+ */
+static uint16_t right_wheel_segment_counter = 0;
+
+/**
+ * The number of seen segment for the current rotation of the left wheel
+ * Used for distance calculations.
+ */
+static uint16_t left_wheel_segment_counter = 0;
+
+/**
+ * The number of seen rising edges for the right wheel.
+ * Used for velocity calculations.
+ */
+static uint16_t right_wheel_rising_edge_counter = 0;
+
+/**
+ * The number of seen rising edges for the left wheel.
+ * Used for velocity calculations.
+ */
+static uint16_t left_wheel_rising_edge_counter = 0;
+
+/**
+ * The tick where the last sampling window was evaluated
+ */
+static uint32_t last_tick = 0;
+
+void wheel_encoder_set_boundaries(uint16_t left_schmitt_trigger_upper_param,
+                                  uint16_t left_schmitt_trigger_lower_param,
+                                  uint16_t right_schmitt_trigger_upper_param,
+                                  uint16_t right_schmitt_trigger_lower_param) {
+  left_schmitt_trigger_upper = left_schmitt_trigger_upper_param;
+  left_schmitt_trigger_lower = left_schmitt_trigger_lower_param;
+  right_schmitt_trigger_upper = right_schmitt_trigger_upper_param;
+  right_schmitt_trigger_lower = right_schmitt_trigger_lower_param;
+}
+
+void wheel_encoder_update(uint16_t left_encoder_value,
+                          uint16_t right_encoder_value) {
+  uint32_t current_tick = HAL_GetTick();
+
+  // Left encoder
+  if (left_encoder_value > left_schmitt_trigger_upper &&
+      last_state_left_schmitt_trigger == 0) {
+    // Rising edge
+    last_state_left_schmitt_trigger = 1;
+    left_wheel_segment_counter++;
+    left_wheel_rising_edge_counter++;
+
+    // A full rotation has happened
+    if (left_wheel_segment_counter >= BLACK_MARK_COUNT) {
+      current_distance.distance_left++;
+      left_wheel_segment_counter = 0;
+    }
+  } else if (left_encoder_value < left_schmitt_trigger_lower &&
+             last_state_left_schmitt_trigger == 1) {
+    last_state_left_schmitt_trigger = 0;
+  }
+
+  // Right encoder
+  if (right_encoder_value > right_schmitt_trigger_upper &&
+      last_state_right_schmitt_trigger == 0) {
+    // Rising edge
+    last_state_right_schmitt_trigger = 1;
+    right_wheel_segment_counter++;
+    right_wheel_rising_edge_counter++;
+
+    // A full rotation has happened
+    if (right_wheel_segment_counter >= BLACK_MARK_COUNT) {
+      current_distance.distance_right++;
+      right_wheel_segment_counter = 0;
+    }
+  } else if (right_encoder_value < right_schmitt_trigger_lower &&
+             last_state_right_schmitt_trigger == 1) {
+    last_state_right_schmitt_trigger = 0;
+  }
+
+  // Velocity sampling
+  if (current_tick - last_tick >= VELOCITY_SAMPLING_FREQ) {
+    last_tick = current_tick;
+    current_velocity.velocity_left =
+        ((float)left_wheel_rising_edge_counter / (float)BLACK_MARK_COUNT) /
+        ((float)VELOCITY_SAMPLING_FREQ / 1000.0f) * 60.0f;
+    current_velocity.velocity_right =
+        ((float)right_wheel_rising_edge_counter / (float)BLACK_MARK_COUNT) /
+        ((float)VELOCITY_SAMPLING_FREQ / 1000.0f) * 60.0f;
+
+    // Reset the counters for velocity
+    left_wheel_rising_edge_counter = 0;
+    right_wheel_rising_edge_counter = 0;
+  }
+};
+
+distance_t wheel_encoder_get_current_distance() {
+  distance_t tmp = {current_distance.distance_left,
+                    current_distance.distance_right};
+  return tmp;
+};
+
+velocity_t wheel_encoder_get_current_velocity() {
+  velocity_t tmp = {current_velocity.velocity_left,
+                    current_velocity.velocity_right};
+  return tmp;
+};
+
+void wheel_encoder_reset() {
+  current_distance.distance_left = 0;
+  current_distance.distance_right = 0;
+
+  current_velocity.velocity_left = 0;
+  current_velocity.velocity_right = 0;
+}

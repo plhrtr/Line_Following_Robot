@@ -1,8 +1,0 @@
--IDrivers/STM32L4xx_HAL_Driver/Inc
--IDrivers/STM32L4xx_HAL_Driver/Inc/Legacy
--IDrivers/CMSIS/Device/ST/STM32L4xx/Include
--IDrivers/CMSIS/Include
--ICore/Inc
--DUSE_HAL_DRIVER
--DSTM32L432xx
-
