@@ -5,7 +5,7 @@ Codebase for the 'Mobile Roboter' course
 
 ```bash 
 # Prepare the build directory
-cmake -B build -G "Ninja" -DCMAKE_TOOLCHAIN_FILE=cmake/gcc-arm-none-eabi.cmake -DCMAKE_BUILD_TYPE=Debug
+cmake -B build -G "Ninja" -DCMAKE_TOOLCHAIN_FILE=cmake/gcc-arm-none-eabi.cmake
 
 # Build the project 
 cmake --build build
@@ -32,4 +32,7 @@ break main
 # Start debugging 
 continue
 ```
+# Logging inside the project
+
+TODO
 

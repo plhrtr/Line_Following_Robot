@@ -1,12 +1,29 @@
 #include "services/wheel_encoder_service.h"
+#include "logger/logger.h"
 #include "stm32l4xx_hal.h"
 #include <stdint.h>
 
+// -------------------------------
+// LOGGING SETTINGS FOR THIS FILE
+// -------------------------------
+static char distance_logging_enabled = 1;
+static char velocity_logging_enabled = 1;
+static char wheel_encoder_logging_enabled = 1;
+
+static const log_module_t wheel_encoder_log_module = {
+    "wheel_encoder_log_module", &wheel_encoder_logging_enabled};
+
+static const log_module_t distance_log_module = {"distance_log_module",
+                                                 &distance_logging_enabled};
+
+static const log_module_t velocity_log_module = {"velocity_log_module",
+                                                 &velocity_logging_enabled};
+
 // The number of black marks on a single wheel
-#define BLACK_MARK_COUNT 12
+static const uint8_t BLACK_MARK_COUNT = 12;
 
 // The frequency of sampling the velocity. In ms
-#define VELOCITY_SAMPLING_FREQ 400
+static const uint16_t VELOCITY_SAMPLING_FREQ = 400;
 
 // Upper bound for the schmitt trigger of the left wheel
 static uint16_t left_schmitt_trigger_upper;
@@ -97,6 +114,12 @@ void wheel_encoder_update(uint16_t left_encoder_value,
     if (left_wheel_segment_counter >= BLACK_MARK_COUNT) {
       current_distance.distance_left++;
       left_wheel_segment_counter = 0;
+
+      // Only log on left wheels full rotation to reduce log message count and
+      // duplication
+      LOGGER_LOG(
+          LOG_DEBUG, distance_log_module, "distance (left | right), %u, %u",
+          current_distance.distance_left, current_distance.distance_right);
     }
   } else if (left_encoder_value < left_schmitt_trigger_lower &&
              last_state_left_schmitt_trigger == 1) {
@@ -134,6 +157,10 @@ void wheel_encoder_update(uint16_t left_encoder_value,
     // Reset the counters for velocity
     left_wheel_rising_edge_counter = 0;
     right_wheel_rising_edge_counter = 0;
+
+    LOGGER_LOG(LOG_DEBUG, velocity_log_module,
+               "velocity (left | right), %u, %u",
+               current_velocity.velocity_left, current_velocity.velocity_right);
   }
 };
 
@@ -155,4 +182,6 @@ void wheel_encoder_reset() {
 
   current_velocity.velocity_left = 0;
   current_velocity.velocity_right = 0;
+
+  LOGGER_LOG(LOG_INFO, wheel_encoder_log_module, "Wheel encoder reseted");
 }

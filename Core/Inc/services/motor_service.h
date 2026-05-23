@@ -27,7 +27,7 @@ int motors_drive_straight(int8_t speed);
 /**
  * Type represention the direction of a curve
  */
-typedef enum direction_t {
+typedef enum {
   STRAIGHT,
   LEFT,
   RIGHT,

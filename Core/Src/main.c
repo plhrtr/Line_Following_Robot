@@ -21,6 +21,7 @@
 #include "calibration_orchestrator/calibrators/wheel_encoder_calibrator.h"
 #include "dma.h"
 #include "gpio.h"
+#include "logger/logger.h"
 #include "services/adc_serive.h"
 #include "services/motor_service.h"
 #include "services/wheel_encoder_service.h"
@@ -30,7 +31,6 @@
 #include "tim.h"
 #include "usart.h"
 #include <stdint.h>
-#include <stdio.h>
 
 void SystemClock_Config(void);
 
@@ -56,14 +56,15 @@ int main(void) {
   MX_ADC1_Init();
   MX_TIM1_Init();
 
+  /* Initialize user defined services and functions */
   motors_init();
-  motors_drive_straight(100);
+  logger_init(LOG_DEBUG, CSV, UART);
 
   /* Infinite loop */
 
-  uint32_t next_wheel_encoder_run = 0;
-  uint32_t next_print_speed_run = 0;
   uint32_t next_adc_service_run = 0;
+  uint32_t next_wheel_encoder_run = 0;
+  uint32_t next_logger_run = 0;
 
   while (1) {
     uint32_t current_tick = HAL_GetTick();
@@ -79,17 +80,9 @@ int main(void) {
       wheel_encoder_update(adc[ENCODER_LEFT], adc[ENCODER_RIGHT]);
     }
 
-    if (current_tick >= next_print_speed_run) {
-      next_print_speed_run = current_tick + 50;
-
-      char string_buf[100];
-      distance_t current_distance = wheel_encoder_get_current_distance();
-
-      uint8_t len = sprintf((char *)string_buf, "%u, %u\n",
-                            current_distance.distance_left,
-                            current_distance.distance_right);
-
-      HAL_UART_Transmit(&huart2, (uint8_t *)string_buf, len, 1000000);
+    if (current_tick >= next_logger_run) {
+      next_logger_run = current_tick + LOGGER_RUN_FREQ;
+      logger_run();
     }
   }
 }

@@ -4,7 +4,7 @@
 /**
  * The command calibration states for all calibrators
  */
-typedef enum calibration_states_t {
+typedef enum {
   // Calibration hasn't started yet
   NOT_STARTED,
   // Is calibrating right now
@@ -17,4 +17,4 @@ typedef enum calibration_states_t {
   FAILED,
 } calibration_states_t;
 
-#endif // !CALIBRATION_ORCHESTRATOR_H
+#endif // CALIBRATION_ORCHESTRATOR_H

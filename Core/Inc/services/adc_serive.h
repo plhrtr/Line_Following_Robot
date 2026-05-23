@@ -6,7 +6,7 @@
 /**
  * Indeces for the adc conversions array
  */
-typedef enum adc_indeces_t {
+typedef enum {
   LINE_SENSOR_MIDDLE,
   ENCODER_LEFT,
   BATTERY,
