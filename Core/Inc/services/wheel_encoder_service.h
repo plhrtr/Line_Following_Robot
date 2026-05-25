@@ -30,7 +30,7 @@ typedef struct {
 /**
  * Sampling frequency for the wheel encoder.
  */
-extern const uint16_t WHEEL_ENCODER_SAMPLING_FREQ;
+extern const uint16_t WHEEL_ENCODER_SAMPLING_PERIOD;
 
 /**
  * Setter for the boundaries for the two schmitt triggers in use to detect
@@ -44,14 +44,11 @@ void wheel_encoder_set_boundaries(uint16_t left_schmitt_trigger_upper,
 /**
  * Update function for the decoder.
  * Takes the new values and updates the internally managed velocity and
- * distance. The running frequency is determined by
+ * distance. The running period is determined by
  * [WHEEL_ENCODER_SAMPLING_FREQ]
- * @param value_left_encoder - The read value of the encoder of the left wheel.
- * @param value_right_decoder - The read value of the encoder of the right
  * wheel.
  */
-void wheel_encoder_update(uint16_t value_left_encoder,
-                          uint16_t value_right_decoder);
+void wheel_encoder_update();
 
 /**
  * Get the current velocity of both wheels

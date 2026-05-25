@@ -1,5 +1,6 @@
 #include "services/wheel_encoder_service.h"
-#include "logger/logger.h"
+#include "logger.h"
+#include "services/adc_serive.h"
 #include "stm32l4xx_hal.h"
 #include <stdint.h>
 
@@ -36,8 +37,6 @@ static uint16_t right_schmitt_trigger_upper;
 
 // Lower bound for the schmitt trigger of the right wheel
 static uint16_t right_schmitt_trigger_lower;
-
-const uint16_t WHEEL_ENCODER_SAMPLING_FREQ = 2;
 
 /**
  * Struct holding the current velocity for both wheels.
@@ -88,6 +87,8 @@ static uint16_t left_wheel_rising_edge_counter = 0;
  */
 static uint32_t last_tick = 0;
 
+const uint16_t WHEEL_ENCODER_SAMPLING_PERIOD = 2;
+
 void wheel_encoder_set_boundaries(uint16_t left_schmitt_trigger_upper_param,
                                   uint16_t left_schmitt_trigger_lower_param,
                                   uint16_t right_schmitt_trigger_upper_param,
@@ -98,8 +99,10 @@ void wheel_encoder_set_boundaries(uint16_t left_schmitt_trigger_upper_param,
   right_schmitt_trigger_lower = right_schmitt_trigger_lower_param;
 }
 
-void wheel_encoder_update(uint16_t left_encoder_value,
-                          uint16_t right_encoder_value) {
+void wheel_encoder_update() {
+  uint16_t left_encoder_value = adc[ENCODER_LEFT];
+  uint16_t right_encoder_value = adc[ENCODER_RIGHT];
+
   uint32_t current_tick = HAL_GetTick();
 
   // Left encoder

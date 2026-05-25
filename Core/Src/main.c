@@ -21,7 +21,8 @@
 #include "calibration_orchestrator/calibrators/wheel_encoder_calibrator.h"
 #include "dma.h"
 #include "gpio.h"
-#include "logger/logger.h"
+#include "logger.h"
+#include "scheduler.h"
 #include "services/adc_serive.h"
 #include "services/motor_service.h"
 #include "services/wheel_encoder_service.h"
@@ -30,7 +31,6 @@
 #include "stm32l4xx_hal_gpio.h"
 #include "tim.h"
 #include "usart.h"
-#include <stdint.h>
 
 void SystemClock_Config(void);
 
@@ -58,33 +58,27 @@ int main(void) {
 
   /* Initialize user defined services and functions */
   motors_init();
-  logger_init(LOG_DEBUG, CSV, UART);
+  logger_init(LOG_DEBUG, PLAIN_TEXT, UART);
+
+  /* Schedule services that should run at startup. */
+  /* Only does can schedule new tasks */
+
+  task_t adc_task = {"adc", &adc_update, ADC_SERVICE_CONVERSION_PERIOD, 0};
+  scheduler_schedule(adc_task);
+
+  task_t calibrator_task = {"calib", &wheel_encoder_calibrate,
+                            ADC_SERVICE_CONVERSION_PERIOD, 0};
+  scheduler_schedule(calibrator_task);
+
+  task_t wheel_encoder_task = {"wheel_enc", &wheel_encoder_update,
+                               WHEEL_ENCODER_SAMPLING_PERIOD, 0};
+  scheduler_schedule(wheel_encoder_task);
+
+  task_t logger_task = {"logger", &logger_run, LOGGER_RUN_PERIOD, 0};
+  scheduler_schedule(logger_task);
 
   /* Infinite loop */
-
-  uint32_t next_adc_service_run = 0;
-  uint32_t next_wheel_encoder_run = 0;
-  uint32_t next_logger_run = 0;
-
-  while (1) {
-    uint32_t current_tick = HAL_GetTick();
-
-    if (current_tick >= next_adc_service_run) {
-      next_adc_service_run = current_tick + ADC_SERVICE_CONVERSION_FREQ;
-      adc_update();
-      wheel_encoder_calibrate();
-    }
-
-    if (current_tick >= next_wheel_encoder_run) {
-      next_wheel_encoder_run = current_tick + WHEEL_ENCODER_SAMPLING_FREQ;
-      wheel_encoder_update(adc[ENCODER_LEFT], adc[ENCODER_RIGHT]);
-    }
-
-    if (current_tick >= next_logger_run) {
-      next_logger_run = current_tick + LOGGER_RUN_FREQ;
-      logger_run();
-    }
-  }
+  scheduler_run();
 }
 
 /**

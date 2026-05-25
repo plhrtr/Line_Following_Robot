@@ -4,7 +4,7 @@
 #include <stdint.h>
 
 /**
- * Indeces for the adc conversions array
+ * Indices for the adc conversions array
  */
 typedef enum {
   LINE_SENSOR_MIDDLE,
@@ -15,7 +15,7 @@ typedef enum {
   LINE_SENSOR_LEFT,
 } adc_indeces_t;
 
-extern const uint16_t ADC_SERVICE_CONVERSION_FREQ;
+extern const uint16_t ADC_SERVICE_CONVERSION_PERIOD;
 
 /**
  * @brief Buffer containing the conversions of the ADC.

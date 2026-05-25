@@ -1,5 +1,6 @@
 #ifndef WHEEL_ENCODER_CALIBRATOR_H
 #define WHEEL_ENCODER_CALIBRATOR_H
+
 #include "calibration_orchestrator/calibration_orchestrator.h"
 
 /**

@@ -1,4 +1,4 @@
-#include "logger/logger.h"
+#include "logger.h"
 #include "stm32l4xx_hal.h"
 #include "stm32l4xx_hal_uart.h"
 #include "usart.h"
@@ -24,7 +24,7 @@ static log_level_t level = LOG_WARNING;
 static log_format_t format = PLAIN_TEXT;
 static log_destination_t destination = UART;
 
-const uint16_t LOGGER_RUN_FREQ = 100;
+const uint16_t LOGGER_RUN_PERIOD = 100;
 
 /**
  * Get the index of the current head of the buffer.

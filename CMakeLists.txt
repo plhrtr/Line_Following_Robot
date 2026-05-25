@@ -55,7 +55,10 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     Core/Src/calibration_orchestration/calibrators/wheel_encoder_calibrator.c
 
     # Logger 
-    Core/Src/logger/logger.c
+    Core/Src/logger.c
+
+    # Scheduler
+    Core/Src/scheduler.c
 )
 
 # Add include paths

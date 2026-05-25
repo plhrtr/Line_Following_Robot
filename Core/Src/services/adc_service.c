@@ -7,7 +7,7 @@ static volatile int conversion_done_flag = 1;
 
 static volatile uint32_t buffer[6];
 
-const uint16_t ADC_SERVICE_CONVERSION_FREQ = 0;
+const uint16_t ADC_SERVICE_CONVERSION_PERIOD = 0;
 
 volatile uint32_t adc[6];
 

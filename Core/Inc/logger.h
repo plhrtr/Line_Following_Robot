@@ -5,7 +5,7 @@
 #include <stdint.h>
 
 // The pause between each logger runs
-extern const uint16_t LOGGER_RUN_FREQ;
+extern const uint16_t LOGGER_RUN_PERIOD;
 
 /**
  * Struct to define a module that logs messages.
