@@ -3,6 +3,7 @@
 #include "logger.h"
 #include "scheduler.h"
 #include "services/led_service.h"
+#include "services/motor_service.h"
 #include "services/touch_sensor_service.h"
 #include "stm32l4xx_hal.h"
 #include <stdint.h>
@@ -10,8 +11,7 @@
 // -------------------------------
 // LOGGING SETTINGS FOR THIS FILE
 // -------------------------------
-static char orchestrator_logging_enabled = 1;
-
+static char orchestrator_logging_enabled = 0;
 static const log_module_t orchestrator_log_module = {
     "orchestrator_log_module", &orchestrator_logging_enabled};
 
@@ -53,11 +53,16 @@ void calibration_orchestrator_run() {
     break;
   case STARTING_TASK:
     if (touch_sensor_middle_pressed) {
-      LOGGER_LOG(LOG_INFO, orchestrator_log_module, "Task %s started",
-                 tasks[current_task_idx].name);
+      if (current_task_idx >= tasks_len) {
+        orchestrator_previous_state_tick = HAL_GetTick();
+        current_state = CALIBRATION_FINISHED;
+      } else {
+        LOGGER_LOG(LOG_INFO, orchestrator_log_module, "Task %s started",
+                   tasks[current_task_idx].name);
 
-      orchestrator_previous_state_tick = HAL_GetTick();
-      current_state = PROCCESSING_TASK;
+        orchestrator_previous_state_tick = HAL_GetTick();
+        current_state = PROCCESSING_TASK;
+      }
     }
     break;
   case PROCCESSING_TASK:
@@ -89,15 +94,10 @@ void calibration_orchestrator_run() {
       led_off(LED_LEFT);
       led_off(LED_RIGHT);
 
-      if (current_task_idx + 1 >= tasks_len) {
-        orchestrator_previous_state_tick = HAL_GetTick();
-        current_state = CALIBRATION_FINISHED;
-      } else {
-        current_task_idx++;
-
-        orchestrator_previous_state_tick = HAL_GetTick();
-        current_state = STARTING_TASK;
-      }
+      current_task_idx++;
+      orchestrator_previous_state_tick = HAL_GetTick();
+      touch_sensor_middle_pressed = 0;
+      current_state = STARTING_TASK;
     }
 
     break;
@@ -108,6 +108,7 @@ void calibration_orchestrator_run() {
     LOGGER_LOG(LOG_INFO, orchestrator_log_module, "Calibration finished");
 
     // TODO: Schedule mission control
+    motors_drive_straight(75);
     break;
   }
 };

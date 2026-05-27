@@ -7,7 +7,7 @@
 // -------------------------------
 // LOGGING SETTINGS FOR THIS FILE
 // -------------------------------
-static char distance_logging_enabled = 0;
+static char distance_logging_enabled = 1;
 static char velocity_logging_enabled = 0;
 static char wheel_encoder_logging_enabled = 0;
 
@@ -59,18 +59,6 @@ static char last_state_right_schmitt_trigger = 0;
 static char last_state_left_schmitt_trigger = 0;
 
 /**
- * The number of seen segments for the current rotation of the right wheel.
- * Used for distance calculations.
- */
-static uint16_t right_wheel_segment_counter = 0;
-
-/**
- * The number of seen segment for the current rotation of the left wheel
- * Used for distance calculations.
- */
-static uint16_t left_wheel_segment_counter = 0;
-
-/**
  * The number of seen rising edges for the right wheel.
  * Used for velocity calculations.
  */
@@ -110,20 +98,12 @@ void wheel_encoder_update() {
       last_state_left_schmitt_trigger == 0) {
     // Rising edge
     last_state_left_schmitt_trigger = 1;
-    left_wheel_segment_counter++;
+    current_distance.distance_left++;
     left_wheel_rising_edge_counter++;
 
-    // A full rotation has happened
-    if (left_wheel_segment_counter >= BLACK_MARK_COUNT) {
-      current_distance.distance_left++;
-      left_wheel_segment_counter = 0;
-
-      // Only log on left wheels full rotation to reduce log message count and
-      // duplication
-      LOGGER_LOG(
-          LOG_DEBUG, distance_log_module, "distance (left | right), %u, %u",
-          current_distance.distance_left, current_distance.distance_right);
-    }
+    LOGGER_LOG(LOG_DEBUG, distance_log_module,
+               "distance (left | right), %u, %u",
+               current_distance.distance_left, current_distance.distance_right);
   } else if (left_encoder_value < left_schmitt_trigger_lower &&
              last_state_left_schmitt_trigger == 1) {
     last_state_left_schmitt_trigger = 0;
@@ -134,14 +114,12 @@ void wheel_encoder_update() {
       last_state_right_schmitt_trigger == 0) {
     // Rising edge
     last_state_right_schmitt_trigger = 1;
-    right_wheel_segment_counter++;
+    current_distance.distance_right++;
     right_wheel_rising_edge_counter++;
 
-    // A full rotation has happened
-    if (right_wheel_segment_counter >= BLACK_MARK_COUNT) {
-      current_distance.distance_right++;
-      right_wheel_segment_counter = 0;
-    }
+    LOGGER_LOG(LOG_DEBUG, distance_log_module,
+               "distance (left | right), %u, %u",
+               current_distance.distance_left, current_distance.distance_right);
   } else if (right_encoder_value < right_schmitt_trigger_lower &&
              last_state_right_schmitt_trigger == 1) {
     last_state_right_schmitt_trigger = 0;

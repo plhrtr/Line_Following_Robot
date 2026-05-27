@@ -25,6 +25,7 @@
 #include "scheduler.h"
 #include "services/adc_serive.h"
 #include "services/motor_service.h"
+#include "services/sound_service.h"
 #include "services/touch_sensor_service.h"
 #include "services/wheel_encoder_service.h"
 #include "stm32l4xx_hal.h"
@@ -75,7 +76,7 @@ int main(void) {
 
   /* Initialize user defined services and functions */
   motors_init();
-  logger_init(LOG_DEBUG, PLAIN_TEXT, UART);
+  logger_init(LOG_DEBUG, CSV, UART);
   touch_sensor_init();
 
   /* Schedule services that should run at startup. */
@@ -96,7 +97,8 @@ int main(void) {
   int id = scheduler_schedule(calibration_task);
   calibration_orchestrator_set_unscheduling_id(id);
 
-  HAL_Delay(2000);
+  /* Startup sound */
+  sound_service_start_up_sound();
 
   /* Infinite loop */
   scheduler_run();

@@ -52,6 +52,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     Core/Src/services/wheel_encoder_service.c
     Core/Src/services/led_service.c
     Core/Src/services/touch_sensor_service.c
+    Core/Src/services/sound_service.c
 
     # Calibration Orchestration
     Core/Src/calibration/calibrators/wheel_encoder_calibrator.c

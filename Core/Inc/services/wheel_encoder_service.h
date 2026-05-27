@@ -19,11 +19,11 @@ typedef struct {
 typedef struct {
   // The travelled distance of the left wheel.
   // Moving backwards also counts towards the distance.
-  // The distance is in revolutions.
+  // The distance is in segments of the wheel.
   uint16_t distance_left;
   // The travelled distance of the right wheel.
   // Moving backwards also counts towards the distance.
-  // The distance is in revolutions.
+  // The distance is in segments of the wheel.
   uint16_t distance_right;
 } distance_t;
 

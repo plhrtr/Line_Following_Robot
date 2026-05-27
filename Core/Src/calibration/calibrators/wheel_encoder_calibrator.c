@@ -7,12 +7,22 @@
 #include "stm32l4xx_hal.h"
 #include <stdint.h>
 
+// -------------------------------
+// LOGGING SETTINGS FOR THIS FILE
+// -------------------------------
+static char wheel_calibrator_logging_enabled = 0;
+static const log_module_t wheel_calibrator_log_module = {
+    "wheel_calibrator_log_module", &wheel_calibrator_logging_enabled};
+
 // The calibration duration
 static const uint32_t CALIBRATION_DURATION = 800;
 // The duration for the verfication process
 static const uint16_t VERIFICATION_DURATION = 6800;
 // The number of revolutions expected in the [VERIFICATION_DURATION] timeframe.
-static const uint8_t EXPECTED_NUMBER_OF_REVOLUTIONS = 5;
+static const uint8_t EXPECTED_NUMBER_OF_SEGMENTS = 60;
+// Tolerance for the calibration
+static const uint8_t TOLERANCE = 5;
+
 // Percentage of derivation from the middle where no switches will happen.
 static const float DEAD_BAND_ZONE = 0.05f;
 
@@ -75,6 +85,10 @@ void wheel_encoder_calibrate() {
       wheel_encoder_set_boundaries(left_uppper, left_lower, right_upper,
                                    right_lower);
 
+      LOGGER_LOG(LOG_INFO, wheel_calibrator_log_module,
+                 "lu: %u, ll: %u, ru: %u, rl: %u", left_uppper, left_lower,
+                 right_upper, right_lower);
+
       calibration_state = VERIFYING;
       wheel_encoder_reset();
       motors_drive_straight(25);
@@ -85,8 +99,14 @@ void wheel_encoder_calibrate() {
         VERIFICATION_DURATION) {
       distance_t current_distance = wheel_encoder_get_current_distance();
 
-      if (current_distance.distance_left == EXPECTED_NUMBER_OF_REVOLUTIONS &&
-          current_distance.distance_right == EXPECTED_NUMBER_OF_REVOLUTIONS) {
+      if (current_distance.distance_left <=
+              EXPECTED_NUMBER_OF_SEGMENTS + TOLERANCE &&
+          current_distance.distance_left >=
+              EXPECTED_NUMBER_OF_SEGMENTS - TOLERANCE &&
+          current_distance.distance_right <=
+              EXPECTED_NUMBER_OF_SEGMENTS + TOLERANCE &&
+          current_distance.distance_right >=
+              EXPECTED_NUMBER_OF_SEGMENTS - TOLERANCE) {
         calibration_state = CALIBRATED;
       } else {
         calibration_state = FAILED;
