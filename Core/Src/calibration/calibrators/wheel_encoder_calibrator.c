@@ -43,6 +43,7 @@ void wheel_encoder_calibrate() {
   case NOT_STARTED:
     calibration_previous_state_tick = HAL_GetTick();
     calibration_state = CALIBRATING;
+    wheel_encoder_reset();
     motors_drive_straight(100);
     break;
   case CALIBRATING:
