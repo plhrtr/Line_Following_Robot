@@ -1,19 +1,8 @@
 #include "scheduler.h"
-#include "logger.h"
 #include "stm32l4xx_hal.h"
 #include <stdint.h>
 
-// -------------------------------
-// LOGGING SETTINGS FOR THIS FILE
-// -------------------------------
-static char scheduler_logging_enabled = 0;
-
-static const log_module_t scheduler_log_module = {"scheduler_log_module",
-                                                  &scheduler_logging_enabled};
-
-#define MAX_TASKS sizeof(uint32_t)
-
-static const float scheduler_tolerance = 10;
+#define MAX_TASKS (sizeof(uint32_t) * 8)
 
 static uint32_t task_bitmap = 0;
 static task_t tasks[MAX_TASKS];
@@ -61,16 +50,10 @@ void scheduler_run() {
       uint32_t elapsed = current_tick - task->next_run;
 
       if ((elapsed & 0x80000000UL) == 0) {
-        if (elapsed > scheduler_tolerance) {
-          LOGGER_LOG(LOG_WARNING, scheduler_log_module,
-                     "Task %s: delayed by %u ms (should: %u, ran: %u)",
-                     task->name, elapsed, task->next_run, current_tick);
-        }
-
         task->task_run();
 
         if (task->period != UINT32_MAX) {
-          task->next_run = current_tick + task->period;
+          task->next_run += task->period;
         } else {
           scheduler_unschedule(i);
         }

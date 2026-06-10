@@ -1,9 +1,9 @@
+#include "services/adc_service.h"
 #include "adc.h"
-#include "services/adc_serive.h"
 #include "stm32l4xx_hal_adc.h"
 #include <stdint.h>
 
-const uint16_t ADC_SERVICE_CONVERSION_PERIOD = 1;
+const uint16_t ADC_SERVICE_CONVERSION_PERIOD = 2;
 
 static char conversion_done_flag = 1;
 

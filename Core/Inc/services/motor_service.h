@@ -47,4 +47,18 @@ typedef enum {
  */
 int motors_drive_curve(int8_t speed, uint8_t sharpness, direction_t direction);
 
+typedef struct {
+  int8_t left;
+  int8_t right;
+} speed_t;
+
+void set_left_motor_speed(int8_t speed);
+
+void set_right_motor_speed(int8_t speed);
+
+/**
+ * Get the current set speed of the motors
+ */
+speed_t motors_get_speed();
+
 #endif /// MOTOR_SERVICE_H

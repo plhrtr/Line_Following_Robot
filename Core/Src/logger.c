@@ -154,7 +154,9 @@ void logger_run() {
 
   switch (destination) {
   case UART:
-    HAL_UART_Transmit(&huart2, (uint8_t *)combined_buf, len, 1000000);
+    if (len > 0) {
+      HAL_UART_Transmit(&huart2, (uint8_t *)combined_buf, len, 1000000);
+    }
     return;
   default:
     return;

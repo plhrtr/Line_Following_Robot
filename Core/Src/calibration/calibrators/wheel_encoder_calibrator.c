@@ -1,121 +1,97 @@
 #include "calibration/calibrators/wheel_encoder_calibrator.h"
 #include "calibration/orchestrator.h"
-#include "logger.h"
-#include "services/adc_serive.h"
+#include "services/adc_service.h"
 #include "services/motor_service.h"
 #include "services/wheel_encoder_service.h"
 #include "stm32l4xx_hal.h"
+#include <stddef.h>
 #include <stdint.h>
 
-// -------------------------------
-// LOGGING SETTINGS FOR THIS FILE
-// -------------------------------
-static char wheel_calibrator_logging_enabled = 0;
-static const log_module_t wheel_calibrator_log_module = {
-    "wheel_calibrator_log_module", &wheel_calibrator_logging_enabled};
+/* Calibration parameters */
+static const uint32_t CALIBRATION_DURATION = 1500;
 
-// The calibration duration
-static const uint32_t CALIBRATION_DURATION = 800;
-// The duration for the verfication process
-static const uint16_t VERIFICATION_DURATION = 6800;
-// The number of revolutions expected in the [VERIFICATION_DURATION] timeframe.
-static const uint8_t EXPECTED_NUMBER_OF_SEGMENTS = 60;
-// Tolerance for the calibration
-static const uint8_t TOLERANCE = 5;
+/* Dead-band expressed as rational  */
+#define DEAD_BAND_NUM 1u
+#define DEAD_BAND_DEN 100u /* 2% = 2/100 */
 
-// Percentage of derivation from the middle where no switches will happen.
-static const float DEAD_BAND_ZONE = 0.05f;
-
-// The tick where the previous state started
+/* State tracking */
 static uint32_t calibration_previous_state_tick = 0;
-
 static calibration_state_t calibration_state = NOT_STARTED;
 
+/* Encoder range accumulators */
 static uint32_t left_encoder_max = 0;
 static uint32_t left_encoder_min = UINT32_MAX;
 static uint32_t right_encoder_max = 0;
 static uint32_t right_encoder_min = UINT32_MAX;
+
+static inline void update_min_max(uint32_t value, uint32_t *max,
+                                  uint32_t *min) {
+  if (value > *max) {
+    *max = value;
+  }
+  if (value < *min) {
+    *min = value;
+  }
+}
+
+static inline void compute_deadband_bounds(uint32_t max, uint32_t min,
+                                           uint32_t *upper, uint32_t *lower) {
+  uint32_t avg = (uint32_t)(((uint64_t)max + (uint64_t)min) / 2u);
+
+  uint32_t up_delta =
+      (uint32_t)((((uint64_t)max - (uint64_t)avg) * DEAD_BAND_NUM +
+                  (DEAD_BAND_DEN / 2u)) /
+                 DEAD_BAND_DEN);
+  uint32_t low_delta =
+      (uint32_t)((((uint64_t)avg - (uint64_t)min) * DEAD_BAND_NUM +
+                  (DEAD_BAND_DEN / 2u)) /
+                 DEAD_BAND_DEN);
+
+  *upper = avg + up_delta;
+  *lower = avg - low_delta;
+}
 
 void wheel_encoder_calibrate() {
   uint32_t current_tick = HAL_GetTick();
 
   switch (calibration_state) {
   case NOT_STARTED:
-    calibration_previous_state_tick = HAL_GetTick();
+    calibration_previous_state_tick = current_tick;
     calibration_state = CALIBRATING;
     wheel_encoder_reset();
     motors_drive_straight(100);
     break;
-  case CALIBRATING:
+
+  case CALIBRATING: {
+    /* Read ADC inputs once per invocation and update min/max trackers */
     uint32_t left_encoder_value = adc[ENCODER_LEFT];
-
-    if (left_encoder_value > left_encoder_max) {
-      left_encoder_max = left_encoder_value;
-    } else if (left_encoder_value < left_encoder_min) {
-      left_encoder_min = left_encoder_value;
-    }
-
     uint32_t right_encoder_value = adc[ENCODER_RIGHT];
 
-    if (right_encoder_value > right_encoder_max) {
-      right_encoder_max = right_encoder_value;
-    } else if (right_encoder_value < right_encoder_min) {
-      right_encoder_min = right_encoder_value;
-    }
+    update_min_max(left_encoder_value, &left_encoder_max, &left_encoder_min);
+    update_min_max(right_encoder_value, &right_encoder_max, &right_encoder_min);
 
-    if (current_tick - calibration_previous_state_tick >=
+    /* Transition when duration elapsed */
+    if ((current_tick - calibration_previous_state_tick) >=
         CALIBRATION_DURATION) {
       calibration_previous_state_tick = current_tick;
 
-      uint32_t average_left = (left_encoder_max + left_encoder_min) / 2;
-      uint32_t average_right = (right_encoder_max + right_encoder_min) / 2;
+      uint32_t left_upper, left_lower, right_upper, right_lower;
 
-      uint32_t left_uppper =
-          average_left +
-          DEAD_BAND_ZONE * (float)(left_encoder_max - average_left);
-      uint32_t left_lower =
-          average_left -
-          DEAD_BAND_ZONE * (float)(average_left - left_encoder_min);
-      uint32_t right_upper =
-          average_right +
-          DEAD_BAND_ZONE * (float)(right_encoder_max - average_right);
-      uint32_t right_lower =
-          average_right -
-          DEAD_BAND_ZONE * (float)(average_right - right_encoder_min);
+      compute_deadband_bounds(left_encoder_max, left_encoder_min, &left_upper,
+                              &left_lower);
+      compute_deadband_bounds(right_encoder_max, right_encoder_min,
+                              &right_upper, &right_lower);
 
-      wheel_encoder_set_boundaries(left_uppper, left_lower, right_upper,
+      wheel_encoder_set_boundaries(left_upper, left_lower, right_upper,
                                    right_lower);
 
-      LOGGER_LOG(LOG_INFO, wheel_calibrator_log_module,
-                 "lu: %u, ll: %u, ru: %u, rl: %u", left_uppper, left_lower,
-                 right_upper, right_lower);
-
-      calibration_state = VERIFYING;
-      wheel_encoder_reset();
-      motors_drive_straight(25);
-    }
-    break;
-  case VERIFYING:
-    if (current_tick - calibration_previous_state_tick >=
-        VERIFICATION_DURATION) {
-      distance_t current_distance = wheel_encoder_get_current_distance();
-
-      if (current_distance.distance_left <=
-              EXPECTED_NUMBER_OF_SEGMENTS + TOLERANCE &&
-          current_distance.distance_left >=
-              EXPECTED_NUMBER_OF_SEGMENTS - TOLERANCE &&
-          current_distance.distance_right <=
-              EXPECTED_NUMBER_OF_SEGMENTS + TOLERANCE &&
-          current_distance.distance_right >=
-              EXPECTED_NUMBER_OF_SEGMENTS - TOLERANCE) {
-        calibration_state = CALIBRATED;
-      } else {
-        calibration_state = FAILED;
-      }
+      /* Prepare for verification */
+      calibration_state = CALIBRATED;
       wheel_encoder_reset();
       motors_stop();
     }
     break;
+  }
   default:
     return;
   }

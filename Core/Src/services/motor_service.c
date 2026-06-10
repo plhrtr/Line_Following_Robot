@@ -1,3 +1,4 @@
+
 #include "services/motor_service.h"
 #include "main.h"
 #include "stm32l4xx_hal.h"
@@ -12,9 +13,13 @@
  */
 static int motors_initialized;
 
-static void set_left_motor_speed(int8_t speed) {
+static speed_t curr_speed = {0, 0};
+
+void set_left_motor_speed(int8_t speed) {
   if (speed < -100 || speed > 100)
     return;
+
+  curr_speed.left = speed;
 
   uint32_t ccr = (uint32_t)(abs(speed) * 65535 / 100);
 
@@ -27,9 +32,11 @@ static void set_left_motor_speed(int8_t speed) {
   }
 }
 
-static void set_right_motor_speed(int8_t speed) {
+void set_right_motor_speed(int8_t speed) {
   if (speed < -100 || speed > 100)
     return;
+
+  curr_speed.right = speed;
 
   uint32_t ccr = (uint32_t)(abs(speed) * 65535 / 100);
 
@@ -95,3 +102,5 @@ int motors_drive_curve(int8_t speed, uint8_t sharpness, direction_t direction) {
 
   return 1;
 };
+
+speed_t motors_get_speed() { return curr_speed; }

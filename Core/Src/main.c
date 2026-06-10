@@ -21,15 +21,15 @@
 #include "calibration/orchestrator.h"
 #include "dma.h"
 #include "gpio.h"
-#include "logger.h"
 #include "scheduler.h"
-#include "services/adc_serive.h"
+#include "services/adc_service.h"
 #include "services/motor_service.h"
 #include "services/sound_service.h"
 #include "services/touch_sensor_service.h"
 #include "services/wheel_encoder_service.h"
 #include "stm32l4xx_hal.h"
 #include "stm32l4xx_hal_adc.h"
+#include "stm32l4xx_hal_adc_ex.h"
 #include "stm32l4xx_hal_gpio.h"
 #include "tim.h"
 #include "usart.h"
@@ -74,9 +74,11 @@ int main(void) {
   MX_ADC1_Init();
   MX_TIM1_Init();
 
+  HAL_ADC_Stop(&hadc1);
+  HAL_ADCEx_Calibration_Start(&hadc1, ADC_SINGLE_ENDED);
+
   /* Initialize user defined services and functions */
   motors_init();
-  logger_init(LOG_DEBUG, CSV, UART);
   touch_sensor_init();
 
   /* Schedule services that should run at startup. */
@@ -88,9 +90,6 @@ int main(void) {
   task_t wheel_encoder_task = {"wheel_enc", &wheel_encoder_update,
                                WHEEL_ENCODER_SAMPLING_PERIOD, 0};
   scheduler_schedule(wheel_encoder_task);
-
-  task_t logger_task = {"logger", &logger_run, LOGGER_RUN_PERIOD, 0};
-  scheduler_schedule(logger_task);
 
   task_t calibration_task = {"calib", &calibration_orchestrator_run,
                              CALIBRATION_ORCHESTRATOR_PERIOD, 0};

@@ -3,27 +3,14 @@
 
 #include <stdint.h>
 
-/**
- * Type representing the velocity of the wheels.
- * It's the absolut velocity.
- */
-typedef struct {
-  // The currenct velocity of the left wheel.
-  // The velocity is in revolutions per minute.
-  uint16_t velocity_left;
-  // The current velocity of the right wheel.
-  // The velocity is in revolutions per minute.
-  uint16_t velocity_right;
-} velocity_t;
-
 typedef struct {
   // The travelled distance of the left wheel.
   // Moving backwards also counts towards the distance.
-  // The distance is in segments of the wheel.
+  // The distance is in segments of the wheel. (24 per rotation)
   uint16_t distance_left;
   // The travelled distance of the right wheel.
   // Moving backwards also counts towards the distance.
-  // The distance is in segments of the wheel.
+  // The distance is in segments of the wheel. (24 per rotation)
   uint16_t distance_right;
 } distance_t;
 
@@ -49,11 +36,6 @@ void wheel_encoder_set_boundaries(uint16_t left_schmitt_trigger_upper,
  * wheel.
  */
 void wheel_encoder_update();
-
-/**
- * Get the current velocity of both wheels
- */
-velocity_t wheel_encoder_get_current_velocity();
 
 /**
  * Get the current travelled distance for each wheel

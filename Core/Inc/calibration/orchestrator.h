@@ -1,5 +1,4 @@
 #ifndef CALIBRATION_ORCHESTRATOR_H
-
 #define CALIBRATION_ORCHESTRATOR_H
 
 #include <stdint.h>

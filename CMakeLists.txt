@@ -59,10 +59,14 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     Core/Src/calibration/orchestrator.c
 
     # Logger 
-    Core/Src/logger.c
+    # Core/Src/logger.c
 
     # Scheduler
     Core/Src/scheduler.c
+
+    # Mission control
+    Core/Src/mission_control/mission_control.c
+    Core/Src/mission_control/handlers/waypoint_navigation.c
 )
 
 # Add include paths
