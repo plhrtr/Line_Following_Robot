@@ -9,8 +9,8 @@
 typedef enum {
   LINE_SENSOR_MIDDLE,
   ENCODER_LEFT,
-  BATTERY,
   LINE_SENSOR_RIGHT,
+  BATTERY,
   ENCODER_RIGHT,
   LINE_SENSOR_LEFT,
 } adc_indeces_t;

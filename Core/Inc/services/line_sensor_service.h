@@ -5,20 +5,37 @@
 #include <stdint.h>
 
 typedef struct {
-  uint16_t left_lower;
-  uint16_t left_upper;
-  uint16_t middle_lower;
-  uint16_t middle_upper;
-  uint16_t right_lower;
-  uint16_t right_upper;
+  uint32_t left_lower;
+  uint32_t left_upper;
+  uint32_t middle_lower;
+  uint32_t middle_upper;
+  uint32_t right_lower;
+  uint32_t right_upper;
 } line_sensor_thresholds_t;
 
+/**
+ * Set the threshold for the line sensor
+ */
 void line_sensor_set_thresholds(line_sensor_thresholds_t thresholds);
 
-int16_t line_sensor_get_error();
+/**
+ * Get the derivation of the line sensors reading from being perfectly on the
+ * line.
+ * Also updates the value for the is on line check
+ *
+ * A negative value means the robot is to far on the right.
+ * A positive value means the robot is to far on the left.
+ */
+float line_sensor_get_error();
 
-bool line_sensor_check_line_lost();
+/**
+ * Check whether the robot lost the line
+ */
+bool line_sensor_is_on_line();
 
-bool line_sensor_check_line_ended();
+/**
+ * Check whether the line abruptly ended
+ */
+bool line_sensor_line_ended();
 
 #endif // !LINE_SENSOR_SERVICE_H

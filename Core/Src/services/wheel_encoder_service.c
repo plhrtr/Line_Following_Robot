@@ -4,10 +4,10 @@
 #include <stdint.h>
 
 /* Schmitt trigger boundaries */
-static uint16_t left_schmitt_trigger_upper;
-static uint16_t left_schmitt_trigger_lower;
-static uint16_t right_schmitt_trigger_upper;
-static uint16_t right_schmitt_trigger_lower;
+static uint16_t left_schmitt_trigger_upper = 3200;
+static uint16_t left_schmitt_trigger_lower = 2200;
+static uint16_t right_schmitt_trigger_upper = 3500;
+static uint16_t right_schmitt_trigger_lower = 3000;
 
 /* Current distances for both wheels */
 static distance_t current_distance = {0, 0};

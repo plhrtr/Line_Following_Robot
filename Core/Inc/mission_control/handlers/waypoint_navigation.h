@@ -15,9 +15,10 @@ typedef struct {
   waypoint_navigation_task_type_t type;
   /* The value for the given task (distance in mm or angle in degrees) */
   uint16_t value;
-  /* Goal encoder count (uses same width as encoder distances to avoid overflow)
-   */
-  uint32_t goal_distance;
+  // The goal distance for the left wheel
+  uint32_t goal_distance_left;
+  // The goal distance for the right wheel
+  uint32_t goal_distance_right;
 } waypoint_navigation_task_t;
 
 // Run function for the waypoint navigation
@@ -25,6 +26,9 @@ void waypoint_navigation_run();
 
 // Reset the way point navigation
 void waypoint_navigation_reset();
+
+// Set the waypoint navigation to the default task
+void waypoint_navigation_set_default();
 
 // Set the tasks the waypoint navigator should execute
 // Also resets the current run

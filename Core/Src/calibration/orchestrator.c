@@ -1,4 +1,5 @@
 #include "calibration/orchestrator.h"
+#include "calibration/calibrators/line_sensor_calibrator.h"
 #include "calibration/calibrators/wheel_encoder_calibrator.h"
 #include "mission_control/mission_control.h"
 #include "scheduler.h"
@@ -20,7 +21,9 @@ static void touch_sensor_callback() { touch_sensor_middle_pressed = 1; }
 
 static const orchestrator_task_t tasks[] = {
     {"wheel_enc", &wheel_encoder_calibrate,
-     &wheel_encoder_calibrator_get_state}};
+     &wheel_encoder_calibrator_get_state},
+    {"line", &line_sensor_calibrate, &line_sensor_calibrator_get_state}};
+
 static size_t tasks_len = sizeof(tasks) / sizeof(tasks[0]);
 
 static uint8_t current_task_idx = 0;

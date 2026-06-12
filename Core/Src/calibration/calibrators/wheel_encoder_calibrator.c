@@ -1,17 +1,19 @@
 #include "calibration/calibrators/wheel_encoder_calibrator.h"
 #include "calibration/orchestrator.h"
+#include "mission_control/handlers/waypoint_navigation.h"
 #include "services/adc_service.h"
 #include "services/motor_service.h"
 #include "services/wheel_encoder_service.h"
 #include "stm32l4xx_hal.h"
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 
 /* Calibration parameters */
-static const uint32_t CALIBRATION_DURATION = 1500;
+static const uint32_t CALIBRATION_DURATION = 500;
 
 /* Dead-band expressed as rational  */
-#define DEAD_BAND_NUM 1u
+#define DEAD_BAND_NUM 2u
 #define DEAD_BAND_DEN 100u /* 2% = 2/100 */
 
 /* State tracking */
@@ -23,6 +25,16 @@ static uint32_t left_encoder_max = 0;
 static uint32_t left_encoder_min = UINT32_MAX;
 static uint32_t right_encoder_max = 0;
 static uint32_t right_encoder_min = UINT32_MAX;
+
+static waypoint_navigation_task_t verificiation_task[] = {
+    {DRIVE_STRAIGHT, 200, 0}, {TURN_LEFT, 90, 0},
+    {DRIVE_STRAIGHT, 200, 0}, {TURN_LEFT, 90, 0},
+    {DRIVE_STRAIGHT, 200, 0}, {TURN_LEFT, 90, 0},
+    {DRIVE_STRAIGHT, 200, 0}, {TURN_LEFT, 90, 0},
+};
+
+static volatile bool verification_finished = false;
+static void on_waypoint_finish() { verification_finished = true; }
 
 static inline void update_min_max(uint32_t value, uint32_t *max,
                                   uint32_t *min) {
@@ -86,11 +98,22 @@ void wheel_encoder_calibrate() {
                                    right_lower);
 
       /* Prepare for verification */
-      calibration_state = CALIBRATED;
-      wheel_encoder_reset();
+      calibration_state = VERIFYING;
+      waypoint_navigation_set_tasks(verificiation_task, 8, &on_waypoint_finish);
       motors_stop();
     }
     break;
+  }
+  case VERIFYING: {
+    if (verification_finished) {
+      calibration_state = CALIBRATED;
+      waypoint_navigation_set_default();
+      verification_finished = false;
+      wheel_encoder_reset();
+      return;
+    }
+
+    waypoint_navigation_run();
   }
   default:
     return;

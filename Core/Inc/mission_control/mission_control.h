@@ -8,10 +8,16 @@
  * Each state has it's own handler
  */
 typedef enum {
+  // Navigate in a waypoint based approach
   WAYPOINT_NAVIGATION,
+  // Search for the line when losing it
+  // Allows for different strategies (e.g. driving straight, driving backwards,
+  // rotation around axis)
+  LINE_SEARCHING,
+  // Follow the line
   LINE_FOLLOWING,
+  // Avoid a detected obstacle
   OBSTACLE_AVOIDANCE,
-  LINE_LOST,
 } mission_control_state_t;
 
 // The scheduling period for the mission control
