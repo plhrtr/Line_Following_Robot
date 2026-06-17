@@ -11,8 +11,8 @@
 
 // Numerator and de-numerator representation of the schmitt trigger dead band
 // zone
-#define DEAD_BAND_NUM 2u
-#define DEAD_BAND_DEN 100u
+static const uint16_t DEAD_BAND_NUM = 2u;
+static const uint16_t DEAD_BAND_DEN = 100u;
 
 static const uint32_t CALIBRATION_DURATION = 500;
 

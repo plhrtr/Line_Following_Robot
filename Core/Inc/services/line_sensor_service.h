@@ -34,13 +34,13 @@ float line_sensor_get_error();
 bool line_sensor_is_on_line();
 
 /**
- * Check whether the line abruptly ended
+ * Check whether a sharp left turn has been detected
  */
-bool line_sensor_line_ended();
+bool line_sensor_sharp_left();
 
 /**
- * Check whether the line has ended abruptly
+ * Check whether a sharp right turn has be detected
  */
-bool line_sensor_line_abruptly_ended();
+bool line_sensor_sharp_right();
 
 #endif // !LINE_SENSOR_SERVICE_H

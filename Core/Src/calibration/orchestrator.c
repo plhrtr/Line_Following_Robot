@@ -8,6 +8,7 @@
 #include "services/sound_service.h"
 #include "services/touch_sensor_service.h"
 #include "stm32l4xx_hal.h"
+#include <stdbool.h>
 #include <stdint.h>
 
 const uint16_t CALIBRATION_ORCHESTRATOR_PERIOD = 2;
@@ -16,10 +17,10 @@ static uint16_t unscheduling_id;
 static orchestrator_state_t current_state = CALIBRATION_NOT_STARTED;
 static uint32_t orchestrator_previous_state_tick = 0;
 
-static char touch_sensor_middle_pressed = 0;
+static volatile bool next_calibration_task_initiated = false;
 static uint16_t touch_sensor_unsubscribe_id;
 
-static void touch_sensor_callback() { touch_sensor_middle_pressed = 1; }
+static void touch_sensor_callback() { next_calibration_task_initiated = true; }
 
 static const orchestrator_task_t tasks[] = {
     // Calibration task for the wheel encoder
@@ -58,7 +59,7 @@ void calibration_orchestrator_run() {
 
     break;
   case STARTING_TASK:
-    if (touch_sensor_middle_pressed) {
+    if (next_calibration_task_initiated) {
       if (current_task_idx >= tasks_len) {
         orchestrator_previous_state_tick = HAL_GetTick();
         current_state = CALIBRATION_FINISHED;
@@ -94,7 +95,7 @@ void calibration_orchestrator_run() {
 
       current_task_idx++;
       orchestrator_previous_state_tick = HAL_GetTick();
-      touch_sensor_middle_pressed = 0;
+      next_calibration_task_initiated = false;
       current_state = STARTING_TASK;
     }
 

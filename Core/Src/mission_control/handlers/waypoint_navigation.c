@@ -1,4 +1,5 @@
 #include "mission_control/handlers/waypoint_navigation.h"
+#include "mission_control/handlers/line_searching.h"
 #include "mission_control/mission_control.h"
 #include "services/motor_service.h"
 #include "services/wheel_encoder_service.h"
@@ -7,19 +8,19 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#define SEGMENTS_PER_MM 0.1909859318f
-#define SEGMENTS_PER_DEGREE 0.1333333334f
-#define PAUSE_TIME 200U
+static const float SEGMENTS_PER_MM = 0.1909859318f;
+static const float SEGMENTS_PER_DEGREE = 0.1333333334f;
+static const uint16_t PAUSE_TIME = 150;
 
-// INFO: Substract 80mm from the last distance for better sensor fitting
+// INFO: Subtract 40mm from the last distance for better sensor alignment at the
+// end
 
 // Task list for the waypoint navigation task.
-static waypoint_navigation_task_t yellow_line_tasks[] = {
-    {DRIVE_STRAIGHT, 425, 0},
-    {TURN_RIGHT, 150, 0},
-    {DRIVE_STRAIGHT, 250, 0},
-    {TURN_LEFT, 45, 0},
-    {DRIVE_STRAIGHT, 120, 0}};
+static waypoint_navigation_task_t yellow_line_tasks[] = {{DRIVE_STRAIGHT, 425},
+                                                         {TURN_RIGHT, 150},
+                                                         {DRIVE_STRAIGHT, 250},
+                                                         {TURN_LEFT, 45},
+                                                         {DRIVE_STRAIGHT, 160}};
 
 static int32_t current_task_index = -1;
 static bool is_pause = false;
@@ -29,6 +30,7 @@ static uint32_t pause_start = 0;
  * Callback that gets executed when the tasks are finished
  */
 static void on_finish_yellow_line_task() {
+  line_searching_reset(SEARCH_LEFT);
   mission_control_set_state(LINE_SEARCHING);
 }
 

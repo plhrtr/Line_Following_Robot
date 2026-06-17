@@ -7,6 +7,12 @@
 
 // INFO: Line Sensor: Higher values means more on black
 
+// Weight for the outer two sensors of the error function. Higher means more
+// sensitive to errors
+static const float ERROR_FUNCTION_OUTER_SENSOR_WEIGHT = 2.5f;
+// Threshold whether a middle sensor reading is considered on the line
+static const float ON_LINE_THRESHOLD = 0.85f;
+
 typedef struct {
   uint32_t left_sensor_value;
   uint32_t middle_sensor_value;
@@ -17,10 +23,8 @@ static line_sensor_reading_t last_reading;
 static line_sensor_thresholds_t thresholds;
 static float last_error;
 static bool is_on_line;
-static bool line_ended_abruptly;
-
-// Threshold whether a sensor reading is considered on the line
-static const float LINE_ENDED_ABRUPTLY_LAST_ERROR = 0.3f;
+static bool sharp_left;
+static bool sharp_right;
 
 /**
  * Normalize the given value via the given thresholds
@@ -105,7 +109,8 @@ static float calculate_error(line_sensor_reading_t reading) {
       normalize(reading.right_sensor_value, thresholds.right_lower,
                 thresholds.right_upper);
 
-  float numerator = (-2.0f * left_normalized) + (2.0f * right_normalized);
+  float numerator = (-ERROR_FUNCTION_OUTER_SENSOR_WEIGHT * left_normalized) +
+                    (ERROR_FUNCTION_OUTER_SENSOR_WEIGHT * right_normalized);
   float denominator = left_normalized + middle_normalized + right_normalized;
 
   if (denominator <= 0.0f) {
@@ -133,7 +138,7 @@ float line_sensor_get_error() {
       .right_sensor_value = adc[LINE_SENSOR_RIGHT],
   };
 
-  /* Normalize to decide state */
+  // Normalize the readings
   float left_n = normalize(new_reading.left_sensor_value, thresholds.left_lower,
                            thresholds.left_upper);
   float middle_n = normalize(new_reading.middle_sensor_value,
@@ -142,30 +147,31 @@ float line_sensor_get_error() {
                             thresholds.right_lower, thresholds.right_upper);
 
   // Check whether the robot is on the line
-  is_on_line = middle_n > 0.6f;
-
-  if (is_on_line) {
-    line_ended_abruptly = false;
-  }
-
-  // Check whether the line ended abruptly (small error, but reading of middle
-  // sensor is relatively low)
-  if (middle_n < 0.55f && last_error < LINE_ENDED_ABRUPTLY_LAST_ERROR &&
-      last_error > -LINE_ENDED_ABRUPTLY_LAST_ERROR) {
-    line_ended_abruptly = true;
-    return 0.0f;
-  }
-
-  last_reading = new_reading;
+  is_on_line = left_n > ON_LINE_THRESHOLD || middle_n > ON_LINE_THRESHOLD ||
+               right_n > ON_LINE_THRESHOLD;
 
   float error = calculate_error(new_reading);
 
-  debug_print(error, left_n, middle_n, right_n);
+  // debug_print(error, left_n, middle_n, right_n);
 
-  /* Calculate and return error */
-  return error;
+  if (is_on_line) {
+    sharp_left = false;
+    sharp_right = false;
+    last_reading = new_reading;
+    return error;
+  } else if (normalize(last_reading.left_sensor_value, thresholds.left_lower,
+                       thresholds.left_upper) > ON_LINE_THRESHOLD) {
+    sharp_left = true;
+    return -1.0f;
+  } else if (normalize(last_reading.right_sensor_value, thresholds.right_lower,
+                       thresholds.right_upper) > ON_LINE_THRESHOLD) {
+    sharp_right = true;
+    return 1.0f;
+  }
 }
 
 bool line_sensor_is_on_line() { return is_on_line; }
 
-bool line_sensor_line_abruptly_ended() { return line_ended_abruptly; }
+bool line_sensor_sharp_left() { return sharp_left; }
+
+bool line_sensor_sharp_right() { return sharp_right; }

@@ -9,6 +9,7 @@ void line_following_run();
 
 /**
  * Initialize the line following handler.
+ * Unsubscribes from previous touch sensor subscriptions.
  * Subscribes to the touch sensor to detect obstacles, so it needs to be
  * executed every time before switching to line following.
  */
