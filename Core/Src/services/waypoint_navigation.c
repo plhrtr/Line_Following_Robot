@@ -1,6 +1,4 @@
-#include "mission_control/handlers/waypoint_navigation.h"
-#include "mission_control/handlers/line_searching.h"
-#include "mission_control/mission_control.h"
+#include "services/waypoint_navigation.h"
 #include "services/motor_service.h"
 #include "services/wheel_encoder_service.h"
 #include "stm32l4xx_hal.h"
@@ -12,32 +10,13 @@ static const float SEGMENTS_PER_MM = 0.1909859318f;
 static const float SEGMENTS_PER_DEGREE = 0.1333333334f;
 static const uint16_t PAUSE_TIME = 150;
 
-// INFO: Subtract 40mm from the last distance for better sensor alignment at the
-// end
-
-// Task list for the waypoint navigation task.
-static waypoint_navigation_task_t yellow_line_tasks[] = {{DRIVE_STRAIGHT, 425},
-                                                         {TURN_RIGHT, 150},
-                                                         {DRIVE_STRAIGHT, 250},
-                                                         {TURN_LEFT, 45},
-                                                         {DRIVE_STRAIGHT, 160}};
-
 static int32_t current_task_index = -1;
 static bool is_pause = false;
 static uint32_t pause_start = 0;
 
-/**
- * Callback that gets executed when the tasks are finished
- */
-static void on_finish_yellow_line_task() {
-  line_searching_reset(SEARCH_LEFT);
-  mission_control_set_state(LINE_SEARCHING);
-}
-
-static waypoint_navigation_task_t *current_tasks = yellow_line_tasks;
-static uint8_t number_of_tasks =
-    sizeof(yellow_line_tasks) / sizeof(waypoint_navigation_task_t);
-static void (*on_finish)() = &on_finish_yellow_line_task;
+static waypoint_navigation_task_t *current_tasks;
+static uint8_t number_of_tasks;
+static void (*on_finish)();
 
 static void initialize_task(waypoint_navigation_task_t *task,
                             const distance_t *curr_distance) {
@@ -145,14 +124,6 @@ void waypoint_navigation_run(void) {
 void waypoint_navigation_reset(void) {
   current_task_index = -1;
   is_pause = false;
-}
-
-void waypoint_navigation_set_default(void) {
-  current_tasks = yellow_line_tasks;
-  number_of_tasks =
-      sizeof(yellow_line_tasks) / sizeof(waypoint_navigation_task_t);
-  on_finish = &on_finish_yellow_line_task;
-  waypoint_navigation_reset();
 }
 
 void waypoint_navigation_set_tasks(waypoint_navigation_task_t *new_tasks,

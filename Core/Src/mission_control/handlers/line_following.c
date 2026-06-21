@@ -83,6 +83,8 @@ void line_following_run(void) {
       led_on(LED_RIGHT);
       line_searching_reset(SEARCH_RIGHT);
     } else {
+      led_on(LED_LEFT);
+      led_on(LED_RIGHT);
       line_searching_reset(SEARCH_LEFT);
     }
     unsubscribe_touch_sensor();

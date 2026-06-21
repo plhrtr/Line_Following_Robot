@@ -54,6 +54,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     Core/Src/services/touch_sensor_service.c
     Core/Src/services/sound_service.c
     Core/Src/services/line_sensor_service.c
+    Core/Src/services/waypoint_navigation.c
 
     # Calibration Orchestration
     Core/Src/calibration/calibrators/wheel_encoder_calibrator.c
@@ -68,10 +69,11 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
 
     # Mission control
     Core/Src/mission_control/mission_control.c
-    Core/Src/mission_control/handlers/waypoint_navigation.c
+    Core/Src/mission_control/handlers/yellow_line_following.c
     Core/Src/mission_control/handlers/line_following.c
     Core/Src/mission_control/handlers/line_searching.c
     Core/Src/mission_control/handlers/obstacle_avoidance.c
+    Core/Src/mission_control/handlers/overcome_gap.c
 )
 
 # Add include paths

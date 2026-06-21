@@ -9,7 +9,7 @@
  */
 typedef enum {
   // Navigate in a waypoint based approach
-  WAYPOINT_NAVIGATION,
+  YELLOW_LINE_FOLLOWING,
   // Search for the line when losing it
   // Allows for different strategies (e.g. driving straight, driving backwards,
   // rotation around axis)
@@ -18,6 +18,8 @@ typedef enum {
   LINE_FOLLOWING,
   // Avoid a detected obstacle
   OBSTACLE_AVOIDANCE,
+  // Overcome a detected gap in the route
+  OVERCOME_GAP,
 } mission_control_state_t;
 
 // The scheduling period for the mission control

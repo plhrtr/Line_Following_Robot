@@ -1,8 +1,8 @@
 #include "calibration/calibrators/wheel_encoder_calibrator.h"
 #include "calibration/orchestrator.h"
-#include "mission_control/handlers/waypoint_navigation.h"
 #include "services/adc_service.h"
 #include "services/motor_service.h"
+#include "services/waypoint_navigation.h"
 #include "services/wheel_encoder_service.h"
 #include "stm32l4xx_hal.h"
 #include <stdbool.h>
@@ -112,7 +112,6 @@ void wheel_encoder_calibrate() {
   case VERIFYING: {
     if (verification_finished) {
       calibration_state = CALIBRATED;
-      waypoint_navigation_set_default();
       verification_finished = false;
       wheel_encoder_reset();
       return;

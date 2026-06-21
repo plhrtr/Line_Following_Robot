@@ -35,12 +35,6 @@ void waypoint_navigation_run();
 void waypoint_navigation_reset();
 
 /**
- * Set the waypoint navigation to the default task.
- * Also resets the current run
- */
-void waypoint_navigation_set_default();
-
-/**
  * Set the tasks the waypoint navigator should execute.
  * Also resets the current run
  */
